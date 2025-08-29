@@ -1,0 +1,234 @@
+\documentclass[12pt, a4paper]{article}
+
+% ============================
+% PAQUETES
+% ============================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{setspace}
+\usepackage{csquotes}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
+}
+\usepackage{cleveref}
+\usepackage{booktabs}
+
+% --- Para tablas que ajusten al ancho de página ---
+\usepackage{tabularx}     % Columnas de ancho flexible
+\usepackage{array}        % Nuevos tipos de columna
+\usepackage{ragged2e}     % \RaggedRight en celdas
+\setlength{\tabcolsep}{6pt}  % Espaciado horizontal entre columnas
+\renewcommand{\arraystretch}{1.15} % Altura extra de filas
+
+% Tipos de columna: L{<ancho>} y Y (flexible)
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+
+% Configuración de cleveref
+\crefname{figure}{figura}{figuras}
+\Crefname{figure}{Figura}{Figuras}
+\crefname{subfigure}{figura}{figuras}
+\Crefname{subfigure}{Figura}{Figuras}
+
+% Conjunciones en español para cleveref
+\AtBeginDocument{\renewcommand{\creflastconjunction}{ y~}}
+\AtBeginDocument{\renewcommand{\crefrangeconjunction}{ a~}}
+\AtBeginDocument{\renewcommand{\crefmiddleconjunction}{, }}
+
+% Carpeta predeterminada para imágenes
+\graphicspath{{resultados/}}
+
+% ============================
+% TÍTULO Y AUTOR
+% ============================
+\title{\textbf{Integración y configuración de análisis estático con SonarCloud, Semgrep y Snyk}}
+\author{Haessler Joan Ortiz Moncada \\[0.5cm]
+        Universidad Distrital Francisco José de Caldas \\
+        Facultad de Ingeniería \\
+        Curso: Construcción de Pruebas de Software}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% ============================
+% INTRODUCCIÓN
+% ============================
+\section{Introducción}
+
+En este informe documento el proceso de integración y configuración de tres plataformas para realizar 
+análisis estático de código en el repositorio de mi autoría: \textbf{confi\_seg}.  
+
+El objetivo principal es consolidar los resultados de seguridad y calidad del código, 
+automatizando su ejecución mediante un único workflow en \texttt{GitHub Actions}.  
+
+El archivo unificado \texttt{security-ci.yml}, que permite ejecutar las tres pruebas de forma coordinada, 
+fue generado con la ayuda de una \textbf{Inteligencia Artificial}, en este caso ChatGPT, 
+para optimizar la integración y reducir errores en la configuración.
+
+% ============================
+% METODOLOGÍA
+% ============================
+\section{Metodología}
+Primero exploré cada plataforma para comprender sus características, los tipos de análisis que realizan y su 
+integración con GitHub. Posteriormente, configuré un único workflow llamado \texttt{security-ci.yml} para ejecutar 
+las tres pruebas automáticamente en cada \textit{push} o \textit{pull request}.  
+
+\subsection*{Nota:}
+A diferencia de SonarCloud y Semgrep, \textbf{Snyk no genera automáticamente el archivo \texttt{.yml}} para GitHub 
+Actions, por lo que es necesario escribirlo manualmente, definiendo las etapas de instalación, autenticación y ejecución.
+
+% ============================
+% RESULTADOS
+% ============================
+\section{Resultados}
+
+\subsection{Resultados de Semgrep}
+El análisis realizado con \textbf{Semgrep} detectó múltiples vulnerabilidades relacionadas con el manejo inseguro de 
+datos, consultas SQL y configuración de CORS.
+
+\subsubsection*{Resumen general de hallazgos}
+\begin{table}[h!]
+\footnotesize
+\centering
+\begin{tabularx}{\textwidth}{@{} L{3.6cm} L{2.2cm} L{2.2cm} Y @{}}
+\toprule
+\textbf{Categoría} & \textbf{Lenguaje} & \textbf{Severidad} & \textbf{Archivos afectados} \\
+\midrule
+SQL concatenado sin sanitización & Python & Baja & \texttt{projects.py} (líneas 140, 163, 179, 188, 196) \\
+Uso de métodos inseguros en DOM & JavaScript & Baja & \texttt{principal.js} (línea 216) \\
+Consultas SQL formateadas sin parámetros & Python & Baja & \texttt{projects.py} (mismas líneas que anteriores) \\
+Etiqueta sin atributo de integridad & HTML & Baja & \texttt{principal.html} (línea 67) \\
+Política CORS insegura & Python & Media & \texttt{main.py} (línea 14) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection*{Principales vulnerabilidades detectadas}
+\begin{itemize}
+    \item \textbf{SQL concatenado sin sanitización} (\texttt{projects.py}):  
+    Varias funciones concatenan datos directamente en consultas SQL, lo que podría permitir ataques de \textbf{inyección SQL}.
+    \item \textbf{Métodos inseguros en el DOM} (\texttt{principal.js}):  
+    Uso de \texttt{innerHTML} con datos controlados por el usuario, potencialmente expuesto a ataques \textbf{XSS}.
+    \item \textbf{Política CORS insegura} (\texttt{main.py}):  
+    Configuración de CORS que permite solicitudes desde cualquier origen, lo que supone un riesgo de seguridad.
+\end{itemize}
+
+%---------------------------------------
+\subsection{Resultados de Snyk}
+El análisis con \textbf{Snyk} me reportó hallazgos principalmente en el backend (Python), con foco en construcción 
+insegura de SQL, manejo de rutas y uso de parámetros no validados en conexiones. A continuación dejo el resumen:
+
+\paragraph{Resumen general de hallazgos}
+\begin{table}[h!]\footnotesize\centering
+\begin{tabularx}{\textwidth}{@{} L{3.5cm} L{2.1cm} L{2.4cm} Y @{}}
+\toprule
+\textbf{Categoría} & \textbf{Lenguaje} & \textbf{Severidad} & \textbf{Archivos afectados (ejemplos)} \\
+\midrule
+SQL Injection (CWE-89) & Python & Alta & \texttt{backend/routers/projects.py} (múltiples líneas: 136, 175, 184, 192, 304, 311, 328, 336, 362, 471, 480, 486, 502, 508, 512, 525, 554, 571, 577, 585, 599, 623, 676, 743, etc.) \\
+Path Traversal (CWE-23) & Python & Alta & \texttt{backend/routers/projects.py} (725, 859); \texttt{qgis\_tools/generar\_proyecto\_qgis.py} (35) \\
+SSRF (CWE-918) & Python & Media & \texttt{backend/routers/projects.py} (155, 169, 218, 288) \\
+Revocación/roles con SQL dinámico & Python & Media & \texttt{backend/routers/projects.py} (806, 813) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Principales vulnerabilidades detectadas}
+\begin{itemize}
+  \item \textbf{SQL Injection}: Encontré múltiples consultas construidas con \texttt{f-strings} que interpolan datos 
+  controlados por el usuario. Mitigación: consultas parametrizadas (\texttt{cur.execute(sql, params)}), validación 
+  estricta y, si es posible, ORM.
+  \item \textbf{Path Traversal}: Se generan rutas a partir de entrada externa (lectura/escritura/borrado). Mitigación: 
+  listas blancas de rutas, normalización con \texttt{os.path.abspath}, validaciones de nombre y extensión, y \texttt{Pathlib}.
+  \item \textbf{SSRF}: Parámetros externos terminan en funciones de conexión; debo validar host, puerto, 
+  nombre de DB y bloquear destinos internos.
+  \item \textbf{Permisos y roles vía SQL dinámico}: Evitar interpolación directa al gestionar \texttt{GRANT/REVOKE/DROP ROLE}; 
+  usar plantillas parametrizadas y catálogos del motor.
+\end{itemize}
+
+\paragraph{Nota sobre workflows \texorpdfstring{\texttt{.yml}}{}}
+A diferencia de \textbf{SonarCloud} y \textbf{Semgrep}, \textbf{Snyk no me sugiere automáticamente} el archivo \texttt{.yml} 
+desde su UI. Yo lo \textit{construí manualmente} y, además, consolidé los tres análisis (Semgrep + Snyk + SonarCloud) en un 
+\textbf{solo workflow} para que se disparen con cada commit/pull request.
+
+%---------------------------------------
+\subsection{Resultados de SonarCloud}
+Con \textbf{SonarCloud} obtuve una radiografía amplia de \textit{code smells}, bugs y vulnerabilidades en varias áreas del 
+repositorio. Este es el resumen de los hallazgos:
+
+\paragraph{Resumen general de hallazgos}
+\begin{table}[h!]\footnotesize\centering
+\begin{tabularx}{\textwidth}{@{} L{3.9cm} L{2.2cm} L{2.6cm} Y @{}}
+\toprule
+\textbf{Categoría} & \textbf{Lenguaje} & \textbf{Severidad} & \textbf{Archivos afectados (ejemplos)} \\
+\midrule
+Construcción de SQL desde datos del usuario & Python & Bloqueante/Crítica & \texttt{backend/routers/projects.py} (140, 196, 308, 315, 516, 575, 581, 615, 626, 661, 680, 747, etc.) \\
+Complejidad cognitiva excesiva & Python/JS & Alta & \texttt{backend/routers/projects.py} (28, 30, 20, 26, 78); \texttt{frontend/assets/js/principal.js} (funciones con complejidad elevada) \\
+Código inalcanzable / comentado / variables sin uso & Python/JS/HTML & Media/Baja & \texttt{projects.py} (unreachable y vars sin uso); \texttt{principal.js} (vars sin uso); \texttt{principal.html} (detalles de integridad/escape) \\
+Convenciones de nombres y estilo & Python & Baja & \texttt{qgis\_tools/qgis\_core.py} (parámetros/campos que no cumplen regex recomendada) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Principales vulnerabilidades y problemas}
+\begin{itemize}
+  \item \textbf{SQL inseguro}: Igual que en Snyk, SonarCloud refuerza que debo eliminar la interpolación directa 
+  en \texttt{execute(...)}, usar parámetros y/o ORM.
+  \item \textbf{Complejidad cognitiva}: Varias funciones superan los umbrales; debo dividir responsabilidades, 
+  extraer helpers y reducir condiciones anidadas.
+  \item \textbf{Mantenibilidad}: Código inalcanzable, comentado y variables sin uso; limpieza y linters automáticos 
+  (\texttt{ruff}/\texttt{flake8}/\texttt{eslint}) ayudarán.
+  \item \textbf{Consistencia y convenciones}: Ajustar nombres a las guías de estilo (snake\_case en Python, etc.) 
+  para mejorar legibilidad.
+\end{itemize}
+
+% ============================
+% ANÁLISIS COMPARATIVO
+% ============================
+\section{Análisis comparativo}
+Para comparar las tres plataformas, analicé sus principales características:
+
+\begin{table}[h!]
+\footnotesize
+\centering
+\begin{tabularx}{\textwidth}{@{} L{3.6cm} L{2.7cm} L{2.3cm} Y @{}}
+\toprule
+\textbf{Criterio} & \textbf{SonarCloud} & \textbf{Semgrep} & \textbf{Snyk} \\
+\midrule
+\textbf{Tipo de análisis} & Calidad, bugs y \textit{code smells} & SAST basado en reglas personalizadas & SCA (dependencias) + SAST \\
+\textbf{Profundidad} & Alta (métricas y deuda técnica) & Media-Alta (reglas flexibles) & Alta en vulnerabilidades conocidas \\
+\textbf{Lenguajes soportados} & +25 & +30 & +20 \\
+\textbf{Integración con GitHub Actions} & Automática, genera \texttt{.yml} & Automática, genera \texttt{.yml} & Manual, requiere configuración propia \\
+\textbf{Reportes} & Visuales y detallados & Consolidados y exportables & Incluye SARIF y dashboard propio \\
+\textbf{Costo} & Gratis con límites & Gratis con límites & Gratis con límites\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+En general:
+\begin{itemize}
+    \item \textbf{SonarCloud} es ideal para evaluar calidad, métricas y deuda técnica.
+    \item \textbf{Semgrep} es más flexible y permite crear reglas personalizadas adaptadas al proyecto.
+    \item \textbf{Snyk} sobresale en la detección de vulnerabilidades en dependencias externas y propone soluciones rápidas.
+\end{itemize}
+
+% ============================
+% CONCLUSIONES
+% ============================
+\section{Conclusiones}
+\begin{enumerate}
+    \item La combinación de \textbf{SonarCloud}, \textbf{Semgrep} y \textbf{Snyk} proporciona una cobertura completa del análisis estático del código:
+    \item La automatización mediante un único workflow simplifica la gestión de resultados.
+    \item Cada plataforma aporta un enfoque diferente y complementario.
+    \item Gracias a la asistencia de IA en la configuración del \texttt{.yml}, el proceso de integración fue más rápido y menos propenso a errores.
+\end{enumerate}
+\end{document}

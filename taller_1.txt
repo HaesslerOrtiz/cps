@@ -1,0 +1,5 @@
+Realizar un informe de métricas (cobertura, code smells, duplicación) y una lista priorizada de hallazgos ejecutando tres análisis estáticos sobre un código en la siguientes plataformas:
+
+- SonarQube
+- Semgrep
+- Snyk
