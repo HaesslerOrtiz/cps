@@ -71,6 +71,7 @@ análisis estático de código en el repositorio de mi autoría: \textbf{confi\_
 El objetivo principal es consolidar los resultados de seguridad y calidad del código, 
 automatizando su ejecución mediante un único workflow en \texttt{GitHub Actions}.  
 
+\subsection*{Nota:}
 El archivo unificado \texttt{security-ci.yml}, que permite ejecutar las tres pruebas de forma coordinada, 
 fue generado con la ayuda de una \textbf{Inteligencia Artificial}, en este caso ChatGPT, 
 para optimizar la integración y reducir errores en la configuración.
@@ -81,11 +82,7 @@ para optimizar la integración y reducir errores en la configuración.
 \section{Metodología}
 Primero exploré cada plataforma para comprender sus características, los tipos de análisis que realizan y su 
 integración con GitHub. Posteriormente, configuré un único workflow llamado \texttt{security-ci.yml} para ejecutar 
-las tres pruebas automáticamente en cada \textit{push} o \textit{pull request}.  
-
-\subsection*{Nota:}
-A diferencia de SonarCloud y Semgrep, \textbf{Snyk no genera automáticamente el archivo \texttt{.yml}} para GitHub 
-Actions, por lo que es necesario escribirlo manualmente, definiendo las etapas de instalación, autenticación y ejecución.
+las tres pruebas automáticamente en cada \textit{push} o \textit{pull request}.
 
 % ============================
 % RESULTADOS
@@ -145,20 +142,15 @@ Revocación/roles con SQL dinámico & Python & Media & \texttt{backend/routers/p
 \paragraph{Principales vulnerabilidades detectadas}
 \begin{itemize}
   \item \textbf{SQL Injection}: Encontré múltiples consultas construidas con \texttt{f-strings} que interpolan datos 
-  controlados por el usuario. Mitigación: consultas parametrizadas (\texttt{cur.execute(sql, params)}), validación 
+  controlados por el usuario. Se deben generar consultas parametrizadas (\texttt{cur.execute(sql, params)}), validación 
   estricta y, si es posible, ORM.
-  \item \textbf{Path Traversal}: Se generan rutas a partir de entrada externa (lectura/escritura/borrado). Mitigación: 
-  listas blancas de rutas, normalización con \texttt{os.path.abspath}, validaciones de nombre y extensión, y \texttt{Pathlib}.
+  \item \textbf{Path Traversal}: Se generan rutas a partir de entrada externa (lectura/escritura/borrado). Se deben  
+  generar listas blancas de rutas, normalización con \texttt{os.path.abspath}, validaciones de nombre y extensión, y \texttt{Pathlib}.
   \item \textbf{SSRF}: Parámetros externos terminan en funciones de conexión; debo validar host, puerto, 
   nombre de DB y bloquear destinos internos.
   \item \textbf{Permisos y roles vía SQL dinámico}: Evitar interpolación directa al gestionar \texttt{GRANT/REVOKE/DROP ROLE}; 
   usar plantillas parametrizadas y catálogos del motor.
 \end{itemize}
-
-\paragraph{Nota sobre workflows \texorpdfstring{\texttt{.yml}}{}}
-A diferencia de \textbf{SonarCloud} y \textbf{Semgrep}, \textbf{Snyk no me sugiere automáticamente} el archivo \texttt{.yml} 
-desde su UI. Yo lo \textit{construí manualmente} y, además, consolidé los tres análisis (Semgrep + Snyk + SonarCloud) en un 
-\textbf{solo workflow} para que se disparen con cada commit/pull request.
 
 %---------------------------------------
 \subsection{Resultados de SonarCloud}
@@ -226,9 +218,8 @@ En general:
 % ============================
 \section{Conclusiones}
 \begin{enumerate}
-    \item La combinación de \textbf{SonarCloud}, \textbf{Semgrep} y \textbf{Snyk} proporciona una cobertura completa del análisis estático del código:
+    \item La combinación de \textbf{SonarCloud}, \textbf{Semgrep} y \textbf{Snyk} proporciona una cobertura completa del análisis estático de código, 
+    otrogando un enfoque diferente y complementario.
     \item La automatización mediante un único workflow simplifica la gestión de resultados.
-    \item Cada plataforma aporta un enfoque diferente y complementario.
-    \item Gracias a la asistencia de IA en la configuración del \texttt{.yml}, el proceso de integración fue más rápido y menos propenso a errores.
 \end{enumerate}
 \end{document}
