@@ -1,0 +1,37 @@
+name: Java CI (taller_2)
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  test-taller-2:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./taller_2  # ← corre Maven dentro de esa carpeta
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+      - name: Run tests
+        run: mvn -B -ntp test
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports-taller-2
+          path: "**/target/surefire-reports/*"
+          if-no-files-found: ignore
+      - name: Publish JUnit summary
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: '**/target/surefire-reports/TEST-*.xml'
+          check_name: 'JUnit Results (taller_2)'
+
