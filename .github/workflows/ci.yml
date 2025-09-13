@@ -28,7 +28,7 @@ jobs:
           name: surefire-reports-taller-2
           path: "**/target/surefire-reports/*"
           if-no-files-found: ignore
-      - name: Publish JUnit summary
+      - name: JUnit resumen
         if: always()
         uses: mikepenz/action-junit-report@v4
         with:
